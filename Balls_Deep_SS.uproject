@@ -1,0 +1,22 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "4.20",
+	"Category": "",
+	"Description": "",
+	"Modules": [
+		{
+			"Name": "Balls_Deep_SS",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Engine"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "Paper2D",
+			"Enabled": true
+		}
+	]
+}
