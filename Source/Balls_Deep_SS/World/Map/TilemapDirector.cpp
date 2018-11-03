@@ -133,8 +133,6 @@ TArray<UTileGroup*> ATilemapDirector::CreateGroups()
 		{
 			UTile* tile = Map->Grid[Map->Width * y + x];
 
-			int32 endPosX, endPosY;
-
 			// Create new group
 			if (!tile->bSolid && !tile->HasGroup())
 			{
