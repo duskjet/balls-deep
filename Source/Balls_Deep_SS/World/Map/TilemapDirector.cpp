@@ -1,13 +1,16 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "TilemapDirector.h"
+#include "TileArea.h"
 #include "Engine.h"
-//PRAGMA_DISABLE_OPTIMIZATION
+PRAGMA_DISABLE_OPTIMIZATION
 // Sets default values
 ATilemapDirector::ATilemapDirector()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+
+	ProductionMode = true;
 
 	ChunkWidth = 4;
 	ChunkHeight = 4;
@@ -29,6 +32,14 @@ void ATilemapDirector::BeginPlay()
 	Super::BeginPlay();
 	
 	CreateChunks();
+
+	if (ProductionMode)
+	{
+		Generate(TArray<int32>({ 5, 6, 7, 8 }), TArray<int32>({ 7,8 }));
+		SmoothMap();
+		SmoothMap();
+		CreateHorizon();
+	}
 }
 
 // Called every frame
@@ -47,18 +58,16 @@ void ATilemapDirector::Generate(TArray<int32> Born, TArray<int32> Survive)
 	int32 width = ChunkWidth * ChunkSize;
 	int32 height = ChunkHeight * ChunkSize;
 	UWorldMap* map = NewObject<UWorldMap>();
-	map->Width = width;
-	map->Height = height;
-	map->Grid.Init(NewObject<UTile>(), width * height);
+	map->Init(width, height);
 
 	automata->FillWithRandomNoise(map, CellRatio);
-	//Beb(&map);
+	//GenerateDebugFrame(&map);
 	Map = map;
 
-	FillWorldMapMono();
+	Draw();
 }
 
-void ATilemapDirector::Beb(UWorldMap* map) {
+void ATilemapDirector::GenerateDebugFrame(UWorldMap* map) {
 	
 	for (int32 y = 0; y < map->Height; y++)
 		for (int32 x = 0; x < map->Width; x++)
@@ -68,7 +77,7 @@ void ATilemapDirector::Beb(UWorldMap* map) {
 		}
 }
 
-void ATilemapDirector::FillWorldMapMono(int32 XOffset, int32 YOffset)
+void ATilemapDirector::Draw(int32 XOffset, int32 YOffset)
 {
 	check(Tileset != nullptr);
 
@@ -78,37 +87,20 @@ void ATilemapDirector::FillWorldMapMono(int32 XOffset, int32 YOffset)
 	for (int32 x = 0; x < Map->Width; x++)
 		for (int32 y = 0; y < Map->Height; y++)
 		{
-			// Find tilemap
-			int32 chunk_x = x / ChunkSize,
-				  chunk_y = y / ChunkSize;
-			auto pos = FIntPoint(chunk_x, chunk_y);
-			auto tilemap = Chunks.Find(pos);
-
-			check(Chunks.Num() > 0);
-			checkf(tilemap != nullptr, TEXT("XY: (%d,%d), Chunk: (%d,%d)"), x, y, chunk_x, chunk_y);
-
-			// Find tile
-			int32 tile_x = x % ChunkSize,
-			// Inverse Y tile pos, 
-			// because Tilemap coords start from TOP LEFT corner 
-			// (engine starts at BOTTOM LEFT)
-				  tile_y = (ChunkSize - 1) - y % ChunkSize; 
+			//check(Chunks.Num() > 0);
+			//checkf(tilemap != nullptr, TEXT("XY: (%d,%d), Chunk: (%d,%d)"), x, y, chunk_x, chunk_y);
 
 			// Set tile
-			FPaperTileInfo LocalTileInfo;
-			LocalTileInfo.TileSet = Tileset;
-			LocalTileInfo.PackedTileIndex = 0;
+			FPaperTileInfo LocalTileInfo = GetSolidTile();
+			FPaperTileInfo NoTileInfo = GetEmptyTile();
 
 			if (Map->Grid[x + Map->Width * y]->bSolid) {
 				alive++;
-				(*tilemap)->SetTile(tile_x, tile_y, 0, LocalTileInfo);
+				DrawTile(x, y, LocalTileInfo);
 			}
 			else {
-				FPaperTileInfo NoTileInfo;
-				LocalTileInfo.TileSet = Tileset;
-				LocalTileInfo.PackedTileIndex = 1;
 				dead++;
-				(*tilemap)->SetTile(tile_x, tile_y, 0, NoTileInfo);
+				DrawTile(x, y, NoTileInfo);
 			}
 
 		}
@@ -118,33 +110,75 @@ void ATilemapDirector::FillWorldMapMono(int32 XOffset, int32 YOffset)
 												  FString::Printf(TEXT("alive: %d, dead: %d"), alive, dead));
 }
 
+void ATilemapDirector::DrawTile(FIntPoint Position, FPaperTileInfo TileInfo)
+{
+	DrawTile(Position.X, Position.Y, TileInfo);
+}
+
+void ATilemapDirector::DrawTile(int32 X, int32 Y, FPaperTileInfo TileInfo)
+{
+	int32	chunk_x = X / ChunkSize,
+		chunk_y = Y / ChunkSize;
+
+	// Find tile
+	int32 tile_x = X % ChunkSize,
+		// Inverse Y tile pos, 
+		// because Tilemap coords start from TOP LEFT corner 
+		// (engine starts at BOTTOM LEFT)
+		tile_y = (ChunkSize - 1) - Y % ChunkSize;
+
+	UPaperTileMapComponent* tilemap = *Chunks.Find(FIntPoint(chunk_x, chunk_y));
+
+	tilemap->SetTile(tile_x, tile_y, 0, TileInfo);
+}
+
 void ATilemapDirector::SmoothMap()
 {
 	automata->SmoothOnce(Map);
-	FillWorldMapMono();
+
+	//FillEmptySpaces(3);
+
+	Draw();
+
+	/*for (auto tilemap : Chunks)
+	{
+		tilemap.Value->RebuildCollision();
+	}*/
 }
 
-TArray<UTileGroup*> ATilemapDirector::CreateGroups()
+void ATilemapDirector::FillEmptySpaces(int32 VolumeThreshold, float Ratio)
 {
-	TArray<UTileGroup*> groups;
-
-	for(int32 y = 0; y < Map->Height; y++)
-		for (int32 x = 0; x < Map->Width; x++)
+	for (UTileArea* group : Map->GetGroups())
+	{
+		if (group->Volume <= VolumeThreshold && FMath::FRand() <= Ratio)
 		{
-			UTile* tile = Map->Grid[Map->Width * y + x];
-
-			// Create new group
-			if (!tile->bSolid && !tile->HasGroup())
-			{
-				UTileGroup* group = NewObject<UTileGroup>();
-				group->Init(tile, Map);
-
-				groups.Add(group);
-			}
+			for (UTile* tile : group->Tiles)
+				tile->bSolid = true;
 		}
+	}
+}
 
+void ATilemapDirector::CreateHorizon()
+{
+	TArray<FIntPoint> line = MidpointDisplacement::CreateHorizon(Map, Map->Width, Map->Height, 20, 0.5, 10);
 
-	return groups;
+	for (FIntPoint pos : line) 
+	{
+		DrawTile(pos, GetSolidTile());
+
+		// Remove tiles on top of it
+		for (UTile* tile : Map->Grid)
+			if (tile->Pos.X == pos.X && tile->Pos.Y > pos.Y)
+				DrawTile(tile->Pos, GetEmptyTile());
+	}
+
+	// Remove areas above horizon line
+	/*for (UTileArea* area : Map->GetGroups())
+	{
+		auto point = line.FindByPredicate([&area](const FIntPoint& point) {
+			return point.X == area->StartPoint.X;
+		});
+	}*/
 }
 
 void ATilemapDirector::CreateChunks()

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "Generation/CellularAutomata.h"
+#include "Generation/MidpointDisplacement.h"
 
 #include "PaperTileMapComponent.h"
 
@@ -32,17 +33,31 @@ public:
 	void Generate(TArray<int32> Born, TArray<int32> Survive);
 	
 	UFUNCTION(BlueprintCallable)
-	void FillWorldMapMono(int32 XOffset = 0, int32 YOffset = 0);
+	void Draw(int32 XOffset = 0, int32 YOffset = 0);
+
+	UFUNCTION(BlueprintCallable)
+	void DrawTile(FIntPoint Position, FPaperTileInfo TileInfo);
+	void DrawTile(int32 X, int32 Y, FPaperTileInfo TileInfo);
 
 	UFUNCTION(BlueprintCallable)
 	void SmoothMap();
 
 	UFUNCTION(BlueprintCallable)
-	TArray<UTileGroup*> CreateGroups();
+	void FillEmptySpaces(int32 VolumeThreshold, float Ratio = 1.0f);
+
+	UFUNCTION(BlueprintCallable)
+	void CreateHorizon();
+
+	// Production Mode
+	UPROPERTY(EditAnywhere)
+	bool ProductionMode;
 
 	// Map Grid
 	UPROPERTY(EditAnywhere)
 	UWorldMap* Map;
+
+	UPROPERTY(EditAnywhere)
+	TArray<UTileArea*> TileGroups;
 
 	// Chunk Info
 	UPROPERTY(EditAnywhere)
@@ -67,6 +82,24 @@ public:
 	void CreateChunks();
 
 private:
-	void Beb(UWorldMap* map);
+	void GenerateDebugFrame(UWorldMap* map);
 	UCellularAutomata* automata;
+
+	FPaperTileInfo GetEmptyTile() 
+	{
+		FPaperTileInfo empty;
+		empty.TileSet = Tileset;
+		empty.PackedTileIndex = 1;
+
+		return empty;
+	}
+
+	FPaperTileInfo GetSolidTile()
+	{
+		FPaperTileInfo solid;
+		solid.TileSet = Tileset;
+		solid.PackedTileIndex = 0;
+
+		return solid;
+	}
 };

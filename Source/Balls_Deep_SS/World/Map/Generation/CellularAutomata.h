@@ -20,8 +20,8 @@ public:
 	~UCellularAutomata();
 
 	void FillWithRandomNoise(UWorldMap* Map, float balance = 0.5f);
-	void Smooth(UWorldMap* Map, int32 Iterations);
-	void SmoothOnce(UWorldMap* Map);
+	void Smooth(UWorldMap*& Map, int32 Iterations);
+	void SmoothOnce(UWorldMap*& Map);
 
 	UPROPERTY()
 	TArray<int32> Born;
