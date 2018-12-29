@@ -5,4 +5,5 @@
 
 IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, Balls_Deep_SS, "Balls_Deep_SS" );
 
+DEFINE_LOG_CATEGORY(Gamemode);
 DEFINE_LOG_CATEGORY(WorldGen);

@@ -6,8 +6,6 @@
 #include "WorldMap.h"
 #include "TileArea.generated.h"
 
-class UTile; class UWorldMap;
-
 /**
  * 
  */
@@ -37,9 +35,9 @@ public:
 		int32 Volume;
 
 	UPROPERTY(BlueprintReadWrite)
-		TArray<UTile*> Tiles;
+		TArray<class UTile*> Tiles;
 
-	void Init(UTile* StartTile, UWorldMap* Map);
+	void Init(UTile* StartTile, class UWorldMap* Map);
 
 private:
 	void CalcVolume(UTile*& Tile, UWorldMap*& Map, bool& Solid, int32& WaveIndex);

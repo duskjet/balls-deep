@@ -18,4 +18,25 @@ class ABalls_Deep_SSGameMode : public AGameModeBase
 	GENERATED_BODY()
 public:
 	ABalls_Deep_SSGameMode();
+
+	virtual void BeginPlay() override;
+	virtual void StartPlay() override;
+	virtual void PostInitializeComponents() override;
+
+	virtual void RestartPlayer(AController* NewPlayer) override;
+	virtual void PostLogin(APlayerController* NewPlayer) override;
+	virtual void Logout(AController* Exiting) override;
+
+	UPROPERTY(BlueprintReadOnly)
+	class APlayerStart* DefaultStart;
+
+private:
+	/* List of Player Controllers */
+	TArray<class APlayerController*> PlayerControllerList;
+
+	FVector GetSpawnPoint(AController* Player);
+
+	void UpdateDefaultStart();
+
+	void DelegateTest(FVector2D pos);
 };

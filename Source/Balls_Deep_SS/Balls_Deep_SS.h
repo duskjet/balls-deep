@@ -4,4 +4,5 @@
 
 #include "CoreMinimal.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(Gamemode, Log, All);
 DECLARE_LOG_CATEGORY_EXTERN(WorldGen, Log, All);

@@ -1,6 +1,8 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
 #include "Balls_Deep_SSCharacter.h"
+#include "PaperFlipbook.h"
+#include "ConstructorHelpers.h"
 #include "PaperFlipbookComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -8,6 +10,7 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "Camera/CameraComponent.h"
 
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
@@ -74,6 +77,12 @@ ABalls_Deep_SSCharacter::ABalls_Deep_SSCharacter()
 	// Enable replication on the Sprite component so animations show up when networked
 	GetSprite()->SetIsReplicated(true);
 	bReplicates = true;
+
+	//static ConstructorHelpers::FObjectFinder<UPaperFlipbook> RunningAnimationObj(TEXT("/Game/2DSideScroller/Sprites/RunningAnimation.RunningAnimation"));
+	//static ConstructorHelpers::FObjectFinder<UPaperFlipbook> IdleAnimationDObj(TEXT("/Game/2DSideScroller/Sprites/IdleAnimation.IdleAnimation"));
+	RunningAnimation = LoadObject<UPaperFlipbook>(NULL, TEXT("/Game/2DSideScroller/Sprites/RunningAnimation.RunningAnimation"), NULL, LOAD_None, NULL);
+	IdleAnimation = LoadObject<UPaperFlipbook>(NULL, TEXT("/Game/2DSideScroller/Sprites/IdleAnimation.IdleAnimation"), NULL, LOAD_None, NULL);
+
 }
 
 //////////////////////////////////////////////////////////////////////////

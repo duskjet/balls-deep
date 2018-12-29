@@ -6,6 +6,7 @@
 #include "Generation/MidpointDisplacement.h"
 
 #include "PaperTileMapComponent.h"
+#include "Tilemap.h"
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
@@ -20,9 +21,46 @@ public:
 	// Sets default values for this actor's properties
 	ATilemapDirector();
 
+public:
+	/** Broadcasts whenever the layer changes */
+	DECLARE_EVENT_OneParam(ATilemapDirector, FDoneEvent, FVector2D)
+	FDoneEvent& OnDone() { return DoneEvent; }
+
+private:
+	/** Broadcasts whenever the layer changes */
+	FDoneEvent DoneEvent;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+public:
+	UPROPERTY(EditAnywhere, Category = MapSize)
+		int32 ChunkWidth;
+
+	UPROPERTY(EditAnywhere, Category = MapSize)
+		int32 ChunkHeight;
+
+	UPROPERTY(EditAnywhere, Category = MapSize)
+		int32 ChunkSize;
+
+	UPROPERTY(EditAnywhere)
+		float CellRatio;
+
+	UPROPERTY(EditAnywhere, Category = CellularAutomata)
+		TArray<int32> NeighbourCountToBorn;
+
+	UPROPERTY(EditAnywhere, Category = CellularAutomata)
+		TArray<int32> NeighbourCountToSurvive;
+
+	UPROPERTY(EditAnywhere, Category = TilemapSettings)
+		int32 TilePixels = 8;
+
+	UPROPERTY(EditAnywhere, Category = TilemapSettings)
+		float PixelsPerUnrealUnit = 0.25f;
+
+	UPROPERTY(EditAnywhere, Category = TilemapSettings)
+		int32 TileFinalSize = TilePixels / PixelsPerUnrealUnit;
 
 public:	
 	// Called every frame
@@ -38,6 +76,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DrawTile(FIntPoint Position, FPaperTileInfo TileInfo);
 	void DrawTile(int32 X, int32 Y, FPaperTileInfo TileInfo);
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetTileWorldPosition(const FIntPoint Position);
+
+	UFUNCTION(BlueprintCallable)
+	UPaperTileMapComponent* FindTilemap(const FIntPoint Position, int32& RelativeX, int32& RelativeY);
 
 	UFUNCTION(BlueprintCallable)
 	void SmoothMap();
@@ -56,6 +100,9 @@ public:
 	UPROPERTY(EditAnywhere)
 	UWorldMap* Map;
 
+	// Horizon line data
+	TArray<FIntPoint> Horizon;
+
 	UPROPERTY(EditAnywhere)
 	TArray<UTileArea*> TileGroups;
 
@@ -64,16 +111,7 @@ public:
 	TMap<FIntPoint, UPaperTileMapComponent*> Chunks;
 
 	UPROPERTY(EditAnywhere)
-	int32 ChunkWidth;
-
-	UPROPERTY(EditAnywhere)
-	int32 ChunkHeight;
-
-	UPROPERTY(EditAnywhere)
-	int32 ChunkSize;
-
-	UPROPERTY(EditAnywhere)
-	float CellRatio;
+	TMap<FIntPoint, ATilemap*> Tilemaps;
 
 	UPROPERTY(EditAnywhere, Category = World)
 	UPaperTileSet* Tileset;
@@ -81,9 +119,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void CreateChunks();
 
+	UFUNCTION(BlueprintCallable)
+	void RebuildCollision();
+
 private:
 	void GenerateDebugFrame(UWorldMap* map);
 	UCellularAutomata* automata;
+
+	FVector2D GetPossiblePlayerStartLocation();
 
 	FPaperTileInfo GetEmptyTile() 
 	{

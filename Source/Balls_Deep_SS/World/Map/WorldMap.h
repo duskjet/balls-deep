@@ -7,7 +7,6 @@
 #include "TileArea.h"
 #include "WorldMap.generated.h"
 
-class UTileArea;
 /**
  * 
  */
@@ -63,7 +62,7 @@ public:
 public:
 	void Init(int32 Width, int32 Height);
 
-	TArray<UTileArea*> GetGroups();
+	TArray<class UTileArea*> GetGroups();
 
 	UWorldMap* Copy();
 

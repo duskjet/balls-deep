@@ -35,10 +35,16 @@ void ATilemapDirector::BeginPlay()
 
 	if (ProductionMode)
 	{
-		Generate(TArray<int32>({ 5, 6, 7, 8 }), TArray<int32>({ 7,8 }));
+		Generate(NeighbourCountToBorn, NeighbourCountToSurvive);
 		SmoothMap();
 		SmoothMap();
 		CreateHorizon();
+		RebuildCollision();
+
+		FVector2D SuggestedPlayerStart = GetPossiblePlayerStartLocation();
+		
+		UE_LOG(WorldGen, Log, TEXT("World generated. Broadcasting suggested PlayerStart Vector: %s."), *SuggestedPlayerStart.ToString());
+		DoneEvent.Broadcast(SuggestedPlayerStart);
 	}
 }
 
@@ -75,6 +81,23 @@ void ATilemapDirector::GenerateDebugFrame(UWorldMap* map) {
 			if (x == 0 || y == 0 || (x == map->Width -1) || y == (map->Height - 1))
 				map->Grid[x + map->Width * y]->bSolid = true;
 		}
+}
+
+FVector2D ATilemapDirector::GetPossiblePlayerStartLocation()
+{
+	int32 pointsTotal = Horizon.Num();
+
+	float lowerBound = 0.33f;
+	float upperBound = 0.66f;
+	float addedHeight = 200;
+	float randomPos = FMath::FRandRange(lowerBound, upperBound);
+
+	FIntPoint point = Horizon[FMath::RoundToInt(pointsTotal * randomPos)];
+
+	FVector tileLocation = GetTileWorldPosition(point);
+	FVector2D finalLocation = FVector2D(tileLocation.X, tileLocation.Z + addedHeight);
+	//DrawDebugSphere(GetWorld(), )
+	return finalLocation;
 }
 
 void ATilemapDirector::Draw(int32 XOffset, int32 YOffset)
@@ -117,19 +140,38 @@ void ATilemapDirector::DrawTile(FIntPoint Position, FPaperTileInfo TileInfo)
 
 void ATilemapDirector::DrawTile(int32 X, int32 Y, FPaperTileInfo TileInfo)
 {
-	int32	chunk_x = X / ChunkSize,
-		chunk_y = Y / ChunkSize;
+	int32 tile_x, tile_y;
+	UPaperTileMapComponent* tilemap = FindTilemap(FIntPoint(X, Y), tile_x, tile_y);
+	
+	tilemap->SetTile(tile_x, tile_y, 0, TileInfo);
+}
+
+FVector ATilemapDirector::GetTileWorldPosition(const FIntPoint Position)
+{
+	int32 x, y;
+	UPaperTileMapComponent* tilemap = FindTilemap(Position, x, y);
+
+	FVector loc = tilemap->GetComponentTransform().GetLocation();
+	loc.X += x * TileFinalSize;
+	loc.Z -= y * TileFinalSize;
+
+	return loc;
+}
+
+UPaperTileMapComponent * ATilemapDirector::FindTilemap(const FIntPoint Position, int32 & RelativeX, int32 & RelativeY)
+{
+	int32	x = Position.X / ChunkSize,
+			y = Position.Y / ChunkSize;
 
 	// Find tile
-	int32 tile_x = X % ChunkSize,
-		// Inverse Y tile pos, 
-		// because Tilemap coords start from TOP LEFT corner 
-		// (engine starts at BOTTOM LEFT)
-		tile_y = (ChunkSize - 1) - Y % ChunkSize;
+	RelativeX = Position.X % ChunkSize;
+	// Inverse Y tile pos, 
+	// because Tilemap coords start from TOP LEFT corner 
+	// (engine starts at BOTTOM LEFT)
+	RelativeY = (ChunkSize - 1) - Position.Y % ChunkSize;
+	UPaperTileMapComponent* tilemap = *Chunks.Find(FIntPoint(x, y));
 
-	UPaperTileMapComponent* tilemap = *Chunks.Find(FIntPoint(chunk_x, chunk_y));
-
-	tilemap->SetTile(tile_x, tile_y, 0, TileInfo);
+	return tilemap;
 }
 
 void ATilemapDirector::SmoothMap()
@@ -172,6 +214,7 @@ void ATilemapDirector::CreateHorizon()
 				DrawTile(tile->Pos, GetEmptyTile());
 	}
 
+	Horizon = line;
 	// Remove areas above horizon line
 	/*for (UTileArea* area : Map->GetGroups())
 	{
@@ -186,27 +229,43 @@ void ATilemapDirector::CreateChunks()
 	//USceneComponent* Root = CreateDefaultSubobject<USceneComponent>("RootComponent");
 	//Root->SetupAttachment(RootComponent);
 
-	int32 tileSize = 8;
-	float pixelsPerUnrealUnit = 0.25f;
-	int32 tileSizeWorld = 8 / pixelsPerUnrealUnit;
+	//RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
 	for (int32 y = 0; y < ChunkHeight; y++)
 		for (int32 x = 0; x < ChunkWidth; x++)
 		{
 			auto pos = FIntPoint(x, y);
+			FVector location = FVector(x * TileFinalSize * ChunkSize, 0, y * TileFinalSize * ChunkSize);
 			auto tilemap = NewObject<UPaperTileMapComponent>(this,FName(*FString::Printf(TEXT("Tilemap_%d_%d"), x, y)));
 			//tilemap->AttachToComponent(GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
-
 			tilemap->RegisterComponent();
-			tilemap->SetRelativeLocation(FVector(x * tileSizeWorld * ChunkSize,
-										 0,
-										 y * tileSizeWorld * ChunkSize));
+			tilemap->SetIsReplicated(true);
+			tilemap->SetRelativeLocation(location);
 
-			tilemap->CreateNewTileMap(ChunkSize, ChunkSize, tileSize, tileSize, pixelsPerUnrealUnit);
+			tilemap->CreateNewTileMap(ChunkSize, ChunkSize, TilePixels, TilePixels, PixelsPerUnrealUnit);
 			tilemap->MakeTileMapEditable();
 			tilemap->RebuildCollision();
-			
+
 			Chunks.Add(pos, tilemap);
+
+			FActorSpawnParameters spawnParams;
+			spawnParams.Name = FName(*FString::Printf(TEXT("Tilemap_%d_%d)"), x, y));
+			auto beb = GetWorld()->SpawnActor<ATilemap>(location, FRotator(), spawnParams);//<ATilemap>(this, FName(*FString::Printf(TEXT("Tilemap(%d,%d)"), x, y)));
+
+			beb->Create(ChunkSize, TilePixels, PixelsPerUnrealUnit);
+			//beb->Map->CreateNewTileMap(ChunkSize, ChunkSize, TilePixels, TilePixels, PixelsPerUnrealUnit);
+			//beb->Map->MakeTileMapEditable();
+			beb->Tags.Add("Tilemap");
+
+			Tilemaps.Add(pos, beb);
 		}
+}
+
+void ATilemapDirector::RebuildCollision()
+{
+	for (auto tilemap : Chunks)
+	{
+		tilemap.Value->RebuildCollision();
+	}
 }
 
