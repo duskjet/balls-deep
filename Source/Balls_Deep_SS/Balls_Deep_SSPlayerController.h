@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UnrealNetwork.h"
 #include "GameFramework/PlayerController.h"
+#include "World/Map/Tilemap.h"
 #include "Balls_Deep_SSPlayerController.generated.h"
 
 /**
@@ -17,5 +19,9 @@ class BALLS_DEEP_SS_API ABalls_Deep_SSPlayerController : public APlayerControlle
 	ABalls_Deep_SSPlayerController();
 	~ABalls_Deep_SSPlayerController();
 	
-	
+	virtual bool InputKey(FKey Key, EInputEvent EventType, float AmountDepressed, bool bGamepad) override;
+
+public:
+	UFUNCTION(Server, reliable, WithValidation)
+	void Server_SetTile(const FVector ClickWorldPos, ATilemap* Tilemap);
 };

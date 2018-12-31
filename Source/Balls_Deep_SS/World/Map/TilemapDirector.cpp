@@ -9,6 +9,7 @@ ATilemapDirector::ATilemapDirector()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	SetReplicates(true);
 
 	ProductionMode = true;
 
@@ -250,9 +251,9 @@ void ATilemapDirector::CreateChunks()
 
 			FActorSpawnParameters spawnParams;
 			spawnParams.Name = FName(*FString::Printf(TEXT("Tilemap_%d_%d)"), x, y));
-			auto beb = GetWorld()->SpawnActor<ATilemap>(location, FRotator(), spawnParams);//<ATilemap>(this, FName(*FString::Printf(TEXT("Tilemap(%d,%d)"), x, y)));
+			auto beb = GetWorld()->SpawnActor<ATilemap>(location, FRotator(0, 0, 0), spawnParams);//<ATilemap>(this, FName(*FString::Printf(TEXT("Tilemap(%d,%d)"), x, y)));
 
-			beb->Create(ChunkSize, TilePixels, PixelsPerUnrealUnit);
+			beb->Create(this, ChunkSize, TilePixels, PixelsPerUnrealUnit);
 			//beb->Map->CreateNewTileMap(ChunkSize, ChunkSize, TilePixels, TilePixels, PixelsPerUnrealUnit);
 			//beb->Map->MakeTileMapEditable();
 			beb->Tags.Add("Tilemap");

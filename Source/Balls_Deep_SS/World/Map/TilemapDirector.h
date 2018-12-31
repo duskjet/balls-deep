@@ -12,6 +12,8 @@
 #include "GameFramework/Actor.h"
 #include "TilemapDirector.generated.h"
 
+class ATilemap;
+
 UCLASS()
 class BALLS_DEEP_SS_API ATilemapDirector : public AActor
 {
@@ -128,6 +130,7 @@ private:
 
 	FVector2D GetPossiblePlayerStartLocation();
 
+public:
 	FPaperTileInfo GetEmptyTile() 
 	{
 		FPaperTileInfo empty;

@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UnrealNetwork.h"
 #include "GameFramework/Actor.h"
 #include "Engine/Classes/Components/BoxComponent.h"
 #include "Paper2D/Classes/PaperTileMapComponent.h"
+#include "TilemapDirector.h"
 #include "Tilemap.generated.h"
 
 UCLASS()
@@ -33,10 +35,18 @@ public:
 	
 public:
 	UFUNCTION(BlueprintCallable)
-	void Create(const int32 TileCount = 32, const int32 TileSize = 8, const float PixelsPerUnrealUnit = 0.25f);
+	void Create(class ATilemapDirector* Director, const int32 TileCount = 32, const int32 TileSize = 8, const float PixelsPerUnrealUnit = 0.25f);
 
 	UFUNCTION()
 	void HandleClick(AActor* TouchedActor, FKey ButtonPressed);
+
+	UFUNCTION(NetMulticast, reliable)
+	void Multicast_SetTile(const FVector ClickWorldPos);
+
+public:
+	UFUNCTION(BlueprintCallable)
+	FIntPoint GetTileFromWorldPos(FVector WorldPos);
+
 private:
 
 public:
@@ -45,6 +55,7 @@ public:
 	float GetPixelsPerUnrealUnit() { return PixelsPerUnrealUnit; }
 
 private:
+	ATilemapDirector* Director;
 	int32 TileCount;
 	int32 TileSize;
 	float PixelsPerUnrealUnit;
