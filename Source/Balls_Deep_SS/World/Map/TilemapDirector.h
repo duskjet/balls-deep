@@ -36,6 +36,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray< class FLifetimeProperty > & OutLifetimeProps) const override;
+
 public:
 	UPROPERTY(EditAnywhere, Category = MapSize)
 		int32 ChunkWidth;
@@ -69,8 +71,11 @@ public:
 	virtual void Tick(float DeltaTime) override;
 	virtual void OnConstruction(const FTransform& Transform) override;
 
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_Generate();
+
 	UFUNCTION(BlueprintCallable)
-	void Generate(TArray<int32> Born, TArray<int32> Survive);
+	void CreateCaves(TArray<int32> Born, TArray<int32> Survive);
 	
 	UFUNCTION(BlueprintCallable)
 	void Draw(int32 XOffset = 0, int32 YOffset = 0);
@@ -99,7 +104,7 @@ public:
 	bool ProductionMode;
 
 	// Map Grid
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, replicated)
 	UWorldMap* Map;
 
 	// Horizon line data
@@ -107,10 +112,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	TArray<UTileArea*> TileGroups;
-
-	// Chunk Info
-	UPROPERTY(EditAnywhere)
-	TMap<FIntPoint, UPaperTileMapComponent*> Chunks;
 
 	UPROPERTY(EditAnywhere)
 	TMap<FIntPoint, ATilemap*> Tilemaps;
@@ -128,7 +129,7 @@ private:
 	void GenerateDebugFrame(UWorldMap* map);
 	UCellularAutomata* automata;
 
-	FVector2D GetPossiblePlayerStartLocation();
+	FVector GetPossiblePlayerStartLocation();
 
 public:
 	FPaperTileInfo GetEmptyTile() 

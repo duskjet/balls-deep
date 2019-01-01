@@ -30,13 +30,15 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	class APlayerStart* DefaultStart;
 
+	void SetDefaultPlayerStart(FVector Position);
+
 private:
 	/* List of Player Controllers */
 	TArray<class APlayerController*> PlayerControllerList;
 
-	FVector GetSpawnPoint(AController* Player);
+	FVector GetSpawnPosition(AController* Player);
 
-	void UpdateDefaultStart();
+	//void UpdateDefaultStart();
 
-	void DelegateTest(FVector2D pos);
+	//void DelegateTest(FVector2D pos);
 };

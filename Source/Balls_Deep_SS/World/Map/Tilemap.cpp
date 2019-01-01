@@ -13,13 +13,13 @@ ATilemap::ATilemap()
 	
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
-	Box = CreateAbstractDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
+	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
 	Box->SetIsReplicated(true);
 	Box->AttachToComponent(RootComponent, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
 
-	Map = CreateAbstractDefaultSubobject<UPaperTileMapComponent>(TEXT("Tilemap"));
+	Map = CreateDefaultSubobject<UPaperTileMapComponent>(TEXT("Tilemap"));
 	Map->SetIsReplicated(true);
-	Map->AttachTo(RootComponent);
+	Map->AttachToComponent(RootComponent, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false));
 
 }
 

@@ -29,30 +29,29 @@ void ABalls_Deep_SSGameMode::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	TArray<AActor*> FoundActors;
-	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATilemapDirector::StaticClass(), FoundActors);
+	//TArray<AActor*> FoundActors;
+	//UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATilemapDirector::StaticClass(), FoundActors);
 
-	if (FoundActors.Num() > 0)
-	{
-		UE_LOG(Gamemode, Warning, TEXT("Found TilemapDirector."));
+	//if (FoundActors.Num() > 0)
+	//{
+	//	UE_LOG(Gamemode, Warning, TEXT("Found TilemapDirector."));
 
-		auto director = Cast<ATilemapDirector>(FoundActors[0]);
-		/*director->OnDone().AddLambda([this]()
-		{
-			DefaultStart = NewObject<APlayerStart>(this);
-			DefaultStart->SetActorLocation(FVector(400, 0, 0));
-		});*/
-		//TBaseStaticDelegateInstance<void, FVector2D> beb() {};
-		director->OnDone().AddUObject(this, &ABalls_Deep_SSGameMode::DelegateTest);
-	}
-	else
-		UE_LOG(Gamemode, Warning, TEXT("Could not find any Tilemap Director Actors."));
+	//	auto director = Cast<ATilemapDirector>(FoundActors[0]);
+	//	/*director->OnDone().AddLambda([this]()
+	//	{
+	//		DefaultStart = NewObject<APlayerStart>(this);
+	//		DefaultStart->SetActorLocation(FVector(400, 0, 0));
+	//	});*/
+	//	//TBaseStaticDelegateInstance<void, FVector2D> beb() {};
+	//	director->OnDone().AddUObject(this, &ABalls_Deep_SSGameMode::DelegateTest);
+	//}
+	//else
+	//	UE_LOG(Gamemode, Warning, TEXT("Could not find any Tilemap Director Actors."));
 }
 
 void ABalls_Deep_SSGameMode::RestartPlayer(AController * NewPlayer)
 {
-
-	FVector spawnLocation = GetSpawnPoint(NewPlayer);
+	FVector spawnLocation = GetSpawnPosition(NewPlayer);
 	AActor* actor = GetWorld()->SpawnActor(ABalls_Deep_SSCharacter::StaticClass(), &spawnLocation);
 	//APawn* pawn = Cast<APawn>(actor);
 	//pawn->SetActorLocation(spawnLocation);
@@ -78,7 +77,25 @@ void ABalls_Deep_SSGameMode::Logout(AController * Exiting)
 	
 }
 
-FVector ABalls_Deep_SSGameMode::GetSpawnPoint(AController * Player)
+void ABalls_Deep_SSGameMode::SetDefaultPlayerStart(FVector Position)
+{
+	if (DefaultStart == nullptr)
+	{
+		DefaultStart = GetWorld()->SpawnActor<APlayerStart>();
+		DefaultStart->GetCapsuleComponent()->Mobility = EComponentMobility::Movable;
+	}
+
+	DefaultStart->SetActorLocation(Position);
+
+	UE_LOG(Gamemode, Display, TEXT("Set new PlayerStart to %s"), *Position.ToString());
+
+	for (APlayerController* Controller : PlayerControllerList)
+	{
+		RestartPlayer(Controller);
+	}
+}
+
+FVector ABalls_Deep_SSGameMode::GetSpawnPosition(AController * Player)
 {
 	if (DefaultStart)
 	{
@@ -88,18 +105,18 @@ FVector ABalls_Deep_SSGameMode::GetSpawnPoint(AController * Player)
 	return FVector(0, 0, 0);
 }
 
-void ABalls_Deep_SSGameMode::DelegateTest(FVector2D pos)
-{
-	DefaultStart = GetWorld()->SpawnActor<APlayerStart>();
-	DefaultStart->GetCapsuleComponent()->Mobility = EComponentMobility::Movable;
-
-	FVector newPos = FVector(pos.X, 0, pos.Y);
-	DefaultStart->SetActorLocation(newPos);
-
-	UE_LOG(Gamemode, Display, TEXT("Set new PlayerStart to %s"), *newPos.ToString());
-
-	for (APlayerController* Controller : PlayerControllerList)
-	{
-		RestartPlayer(Controller);
-	}
-}
+//void ABalls_Deep_SSGameMode::DelegateTest(FVector2D pos)
+//{
+//	DefaultStart = GetWorld()->SpawnActor<APlayerStart>();
+//	DefaultStart->GetCapsuleComponent()->Mobility = EComponentMobility::Movable;
+//
+//	FVector newPos = FVector(pos.X, 0, pos.Y);
+//	DefaultStart->SetActorLocation(newPos);
+//
+//	UE_LOG(Gamemode, Display, TEXT("Set new PlayerStart to %s"), *newPos.ToString());
+//
+//	for (APlayerController* Controller : PlayerControllerList)
+//	{
+//		RestartPlayer(Controller);
+//	}
+//}

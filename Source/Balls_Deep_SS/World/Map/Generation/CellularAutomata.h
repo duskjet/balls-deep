@@ -16,7 +16,7 @@ class BALLS_DEEP_SS_API UCellularAutomata : public UObject
 
 public:
 	UCellularAutomata();
-	UCellularAutomata(TArray<int32> born, TArray<int32> survive);
+	UCellularAutomata(TArray<int32> InBorn, TArray<int32> InSurvive);
 	~UCellularAutomata();
 
 	void FillWithRandomNoise(UWorldMap* Map, float balance = 0.5f);

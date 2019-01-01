@@ -7,10 +7,10 @@ UCellularAutomata::UCellularAutomata()
 {
 }
 
-UCellularAutomata::UCellularAutomata(TArray<int32> born, TArray<int32> survive)
+UCellularAutomata::UCellularAutomata(TArray<int32> InBorn, TArray<int32> InSurvive) : 
+	Born(InBorn), 
+	Survive(InSurvive)
 {
-	Born = born;
-	Survive = survive;
 }
 
 UCellularAutomata::~UCellularAutomata()
