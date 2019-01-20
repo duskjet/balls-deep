@@ -7,6 +7,16 @@ UWorldMap::UWorldMap()
 {
 }
 
+bool UWorldMap::IsNameStableForNetworking() const
+{
+	return true;
+}
+
+bool UWorldMap::IsSupportedForNetworking() const
+{
+	return true;
+}
+
 UWorldMap::~UWorldMap()
 {
 }

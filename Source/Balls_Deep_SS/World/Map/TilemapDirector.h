@@ -74,11 +74,15 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_Generate();
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Replicate_Map(const TArray<UTile*>& Map);
+
 	UFUNCTION(BlueprintCallable)
 	void CreateCaves(TArray<int32> Born, TArray<int32> Survive);
 	
 	UFUNCTION(BlueprintCallable)
 	void Draw(int32 XOffset = 0, int32 YOffset = 0);
+	void Draw(const UWorldMap* InMap, int32 XOffset = 0, int32 YOffset = 0);
 
 	UFUNCTION(BlueprintCallable)
 	void DrawTile(FIntPoint Position, FPaperTileInfo TileInfo);
@@ -104,7 +108,7 @@ public:
 	bool ProductionMode;
 
 	// Map Grid
-	UPROPERTY(EditAnywhere, replicated)
+	UPROPERTY(EditAnywhere, Replicated)
 	UWorldMap* Map;
 
 	// Horizon line data
@@ -126,7 +130,7 @@ public:
 	void RebuildCollision();
 
 private:
-	void GenerateDebugFrame(UWorldMap* map);
+	void GenerateDebugFrame(UWorldMapComponent* map);
 	UCellularAutomata* automata;
 
 	FVector GetPossiblePlayerStartLocation();

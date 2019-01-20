@@ -24,4 +24,7 @@ class BALLS_DEEP_SS_API ABalls_Deep_SSPlayerController : public APlayerControlle
 public:
 	UFUNCTION(Server, reliable, WithValidation)
 	void Server_SetTile(const FVector ClickWorldPos, ATilemap* Tilemap);
+
+	UFUNCTION(Client, reliable)
+	void ClientLoadWorldMap(UWorldMap* Map);
 };

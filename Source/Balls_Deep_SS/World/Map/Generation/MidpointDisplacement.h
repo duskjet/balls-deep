@@ -14,7 +14,7 @@ public:
 	MidpointDisplacement();
 	~MidpointDisplacement();
 
-	static TArray<FIntPoint> CreateHorizon(UWorldMap* Map, int32 Width, int32 Height, float Range, float Roughness, int32 Steps);
+	static TArray<FIntPoint> CreateHorizon(int32 Width, int32 Height, float Range, float Roughness, int32 Steps);
 
 private:
 	static void DisplacePoints(TArray<FIntPoint>* Line, float Range, float Roughness, int32 Steps);

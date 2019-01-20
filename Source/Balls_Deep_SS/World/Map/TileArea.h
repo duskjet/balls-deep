@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "WorldMap.h"
+#include "WorldMapComponent.h"
 #include "TileArea.generated.h"
 
 /**
@@ -38,7 +39,9 @@ public:
 		TArray<class UTile*> Tiles;
 
 	void Init(UTile* StartTile, class UWorldMap* Map);
+	void Init(UTile* StartTile, class UWorldMapComponent* Map);
 
 private:
 	void CalcVolume(UTile*& Tile, UWorldMap*& Map, bool& Solid, int32& WaveIndex);
+	void CalcVolume(UTile*& Tile, UWorldMapComponent*& Map, bool& Solid, int32& WaveIndex);
 };

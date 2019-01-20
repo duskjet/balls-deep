@@ -47,6 +47,11 @@ class BALLS_DEEP_SS_API UWorldMap : public UObject
 	GENERATED_BODY()
 
 public:
+
+	virtual bool IsNameStableForNetworking() const override;
+
+	virtual bool IsSupportedForNetworking() const override;
+
 	UWorldMap();
 	~UWorldMap();
 

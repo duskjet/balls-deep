@@ -9,7 +9,8 @@ ATilemap::ATilemap()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	SetReplicates(true);
+	bReplicates = true;
+	bNetLoadOnClient = true;
 	
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
@@ -28,6 +29,14 @@ void ATilemap::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void ATilemap::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	//Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	//DOREPLIFETIME(UWorldMapComponent, Grid);
+	//DOREPLIFETIME(UWorldMapComponent, Width);
+	//DOREPLIFETIME(UWorldMapComponent, Height);
 }
 
 // Called every frame

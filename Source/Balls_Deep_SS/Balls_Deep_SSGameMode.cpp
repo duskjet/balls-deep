@@ -6,6 +6,8 @@
 #include "Engine.h"
 #include "World/Map/TilemapDirector.h"
 
+PRAGMA_DISABLE_OPTIMIZATION
+
 ABalls_Deep_SSGameMode::ABalls_Deep_SSGameMode()
 {
 	// Set default pawn class to our character
@@ -65,6 +67,19 @@ void ABalls_Deep_SSGameMode::PostLogin(APlayerController * NewPlayer)
 	if (DefaultStart) 
 	{
 		Super::PostLogin(NewPlayer);
+
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATilemapDirector::StaticClass(), FoundActors);
+
+		if (FoundActors.Num() > 0)
+		{
+			UE_LOG(Gamemode, Warning, TEXT("Found TilemapDirector."));
+
+			auto director = Cast<ATilemapDirector>(FoundActors[0]);
+			((ABalls_Deep_SSPlayerController*)NewPlayer)->ClientLoadWorldMap(director->Map);
+		}
+		else
+			UE_LOG(Gamemode, Warning, TEXT("Could not find any Tilemap Director Actors."));
 	}
 	else
 	{

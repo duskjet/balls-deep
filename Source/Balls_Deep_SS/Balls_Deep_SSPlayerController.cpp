@@ -44,6 +44,29 @@ bool ABalls_Deep_SSPlayerController::InputKey(FKey Key, EInputEvent EventType, f
 	return false;
 }
 
+void ABalls_Deep_SSPlayerController::ClientLoadWorldMap_Implementation(UWorldMap * Map)
+{
+	if (Map) {
+		UE_LOG(LogTemp, Log, TEXT("[CLIENT] Server sent a map %dx%d"), Map->Width, Map->Height);
+	}
+	else {
+		UE_LOG(LogTemp, Log, TEXT("[CLIENT] Server sent no map!"));
+	}
+
+	TArray<AActor*> FoundActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATilemapDirector::StaticClass(), FoundActors);
+
+	if (FoundActors.Num() > 0)
+	{
+		UE_LOG(LogTemp, Log, TEXT("[CLIENT] Found TilemapDirector."));
+
+		auto director = Cast<ATilemapDirector>(FoundActors[0]);
+		director->Map = Map;
+	}
+	else
+		UE_LOG(LogTemp, Log, TEXT("[CLIENT] Could not find any Tilemap Director Actors."));
+}
+
 void ABalls_Deep_SSPlayerController::Server_SetTile_Implementation(const FVector ClickWorldPos, ATilemap* Tilemap)
 {
 	Tilemap->Multicast_SetTile(ClickWorldPos);

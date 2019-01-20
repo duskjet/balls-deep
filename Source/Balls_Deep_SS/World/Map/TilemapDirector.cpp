@@ -11,6 +11,7 @@ ATilemapDirector::ATilemapDirector()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
+	bAlwaysRelevant = true;
 
 	ProductionMode = true;
 
@@ -33,12 +34,14 @@ void ATilemapDirector::Server_Generate_Implementation()
 	ABalls_Deep_SSGameMode* gamemode = (ABalls_Deep_SSGameMode*)GetWorld()->GetAuthGameMode();
 
 	CreateCaves(NeighbourCountToBorn, NeighbourCountToSurvive);
-	SmoothMap(); Draw();
-	SmoothMap(); Draw();
+	SmoothMap(); //Draw();
+	SmoothMap(); //Draw();
 	CreateHorizon();
 
 	FVector SuggestedPlayerStart = GetPossiblePlayerStartLocation();
 	gamemode->SetDefaultPlayerStart(SuggestedPlayerStart);
+
+	//Replicate_Map(Map->Grid);
 }
 
 bool ATilemapDirector::Server_Generate_Validate()
@@ -59,7 +62,7 @@ void ATilemapDirector::BeginPlay()
 
 		Draw();
 		RebuildCollision();
-		
+
 		//UE_LOG(WorldGen, Log, TEXT("World generated. Broadcasting suggested PlayerStart Vector: %s."), *SuggestedPlayerStart.ToString());
 		//DoneEvent.Broadcast(SuggestedPlayerStart);
 	}
@@ -67,6 +70,7 @@ void ATilemapDirector::BeginPlay()
 
 void ATilemapDirector::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ATilemapDirector, Map);
 }
 
@@ -77,6 +81,14 @@ void ATilemapDirector::Tick(float DeltaTime)
 
 }
 
+void ATilemapDirector::Replicate_Map_Implementation(const TArray<UTile*>& Map)
+{
+	this->Map->Grid = Map;
+
+	Draw();
+	RebuildCollision();
+}
+
 void ATilemapDirector::CreateCaves(TArray<int32> Born, TArray<int32> Survive)
 {
 	automata = NewObject<UCellularAutomata>();
@@ -85,17 +97,16 @@ void ATilemapDirector::CreateCaves(TArray<int32> Born, TArray<int32> Survive)
 
 	int32 width = ChunkWidth * ChunkSize;
 	int32 height = ChunkHeight * ChunkSize;
-	UWorldMap* map = NewObject<UWorldMap>();
-	map->Init(width, height);
+	Map = NewObject<UWorldMap>();
+	Map->Init(width, height);
 
-	automata->FillWithRandomNoise(map, CellRatio);
+	UCellularAutomata::FillWithNoise(Map->Grid, width, height, CellRatio);
 	//GenerateDebugFrame(&map);
-	Map = map;
 
 	Draw();
 }
 
-void ATilemapDirector::GenerateDebugFrame(UWorldMap* map) {
+void ATilemapDirector::GenerateDebugFrame(UWorldMapComponent* map) {
 	
 	for (int32 y = 0; y < map->Height; y++)
 		for (int32 x = 0; x < map->Width; x++)
@@ -155,6 +166,39 @@ void ATilemapDirector::Draw(int32 XOffset, int32 YOffset)
 												  FString::Printf(TEXT("alive: %d, dead: %d"), alive, dead));
 }
 
+void ATilemapDirector::Draw(const UWorldMap * InMap, int32 XOffset, int32 YOffset)
+{
+	check(Tileset != nullptr);
+
+	int32 alive = 0;
+	int32 dead = 0;
+
+	for (int32 x = 0; x < InMap->Width; x++)
+		for (int32 y = 0; y < InMap->Height; y++)
+		{
+			//check(Chunks.Num() > 0);
+			//checkf(tilemap != nullptr, TEXT("XY: (%d,%d), Chunk: (%d,%d)"), x, y, chunk_x, chunk_y);
+
+			// Set tile
+			FPaperTileInfo LocalTileInfo = GetSolidTile();
+			FPaperTileInfo NoTileInfo = GetEmptyTile();
+
+			if (InMap->Grid[x + InMap->Width * y]->bSolid) {
+				alive++;
+				DrawTile(x, y, LocalTileInfo);
+			}
+			else {
+				dead++;
+				DrawTile(x, y, NoTileInfo);
+			}
+
+		}
+
+	if (GEngine)
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow,
+			FString::Printf(TEXT("alive: %d, dead: %d"), alive, dead));
+}
+
 void ATilemapDirector::DrawTile(FIntPoint Position, FPaperTileInfo TileInfo)
 {
 	DrawTile(Position.X, Position.Y, TileInfo);
@@ -202,14 +246,9 @@ UPaperTileMapComponent * ATilemapDirector::FindTilemap(const FIntPoint Position,
 
 void ATilemapDirector::SmoothMap()
 {
-	automata->SmoothOnce(Map);
+	UCellularAutomata::Smooth(Map->Grid, ChunkWidth * ChunkSize, ChunkHeight * ChunkSize, NeighbourCountToBorn, NeighbourCountToSurvive);
 
 	//FillEmptySpaces(3);
-
-	/*for (auto tilemap : Chunks)
-	{
-		tilemap.Value->RebuildCollision();
-	}*/
 }
 
 void ATilemapDirector::FillEmptySpaces(int32 VolumeThreshold, float Ratio)
@@ -226,7 +265,7 @@ void ATilemapDirector::FillEmptySpaces(int32 VolumeThreshold, float Ratio)
 
 void ATilemapDirector::CreateHorizon()
 {
-	TArray<FIntPoint> line = MidpointDisplacement::CreateHorizon(Map, Map->Width, Map->Height, 20, 0.5, 10);
+	TArray<FIntPoint> line = MidpointDisplacement::CreateHorizon(Map->Width, Map->Height, 20, 0.5, 10);
 
 	for (FIntPoint pos : line) 
 	{
@@ -277,6 +316,8 @@ void ATilemapDirector::CreateChunks()
 
 			Tilemaps.Add(pos, tilemap);
 		}
+
+	int32 a = 0;
 }
 
 void ATilemapDirector::RebuildCollision()

@@ -11,7 +11,7 @@ MidpointDisplacement::~MidpointDisplacement()
 {
 }
 
-TArray<FIntPoint> MidpointDisplacement::CreateHorizon(UWorldMap * Map, int32 Width, int32 Height, float Range, float Roughness, int32 Steps)
+TArray<FIntPoint> MidpointDisplacement::CreateHorizon(int32 Width, int32 Height, float Range, float Roughness, int32 Steps)
 {
 	TArray<FIntPoint> line;
 
